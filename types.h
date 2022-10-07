@@ -15,8 +15,28 @@ typedef struct {
     } val;
 } token_t;
 
-// ast
+///*** token ***///
+typedef enum {
+    SYM_DECLARING,
+    SYM_REFERENCING,
+    COMPUTING,
+    ASSIGNING,
+    INT_CONSTING,
+    FLOAT_CONSTING,
+    PRINTING,
+    CONVERTING
+} ast_node_type;
+
+typedef struct _ast_node_t {
+    ast_node_type type;
+    union {
+        struct _ast_node_t *child;
+        struct _ast_node_t *childs[2];
+    };
+} ast_node_t;
+
 typedef struct {
+    ast_node_t *childs;
 } ast_t;
 
 #endif /* __TYPES_H__ */
