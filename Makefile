@@ -2,9 +2,11 @@ CC = gcc
 CFLAGS = -Wall
 RM = rm -f
 OBJS = acc.o scanner.o parser.o
-TARGET = acc
+PROG = acc
+TEST-OBJS = test-acc.o scanner.o parser.o
+TEST-PROG = test-acc
 
-ALL: $(TARGET)
+ALL: $(PROG)
 
 acc.o: types.h scanner.h parser.h
 scanner.o: types.h scanner.h
@@ -13,8 +15,14 @@ parser.o: types.h parser.h
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-$(TARGET): $(OBJS)
+$(PROG): $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
+$(TEST-PROG): $(TEST-OBJS)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+test: $(TEST-PROG)
+	./$(TEST-PROG)
+
 clean:
-	$(RM) $(TARGET) $(OBJS)
+	$(RM) $(PROG) $(OBJS) $(TEST-PROG) $(TEST-OBJS)
