@@ -2,20 +2,37 @@
 #define __TYPES_H__
 
 ///*** symbol table ***///
-#define TABLE_SIZE 26
-typedef enum {NOT_USED, INTEGER, FLOAT} sym_type;
-extern sym_type table[TABLE_SIZE];
+/* never used
+ * #define TABLE_SIZE 26
+ * typedef enum {NOT_USED, INTEGER, FLOAT} sym_type;
+ * extern sym_type table[TABLE_SIZE];
+ */
 
-///*** token ***///
+///*** scanner token ***///
+typedef enum {
+	RESERVED_WORD,
+	LIBRARY_NAME,
+	IDENTIFIER,
+	CHARACTER,
+	NUMBER,
+	POINTER,
+	BRACKET,
+	OPERATOR,
+	COMPARATOR,
+	ADDRESS,
+	PUNCTUATION,
+	FORMAT_SPECIFIER,
+	PRINTED_TOKEN,
+	COMMENT,
+	UNDEFINED_TOKEN,
+	SKIPPED_TOKEN
+} token_type;
 typedef struct {
-    enum {FLOATDCL, INTDCL, PRINT, ID, ASSIGN, PLUS, MINUS, INUM, FNUM} type;
-    union {
-        char ch; // ID
-        char *str; // INUM, FNUM
-    } val;
+	token_type type;
+	char *str; //value
 } token_t;
 
-///*** token ***///
+///*** parser token ***///
 typedef enum {
     SYM_DECLARING,
     SYM_REFERENCING,
