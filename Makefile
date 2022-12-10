@@ -1,14 +1,14 @@
 CC = gcc
 CFLAGS = -Wall
 RM = rm -f
-OBJS = acc.o scanner.o parser.o
-PROG = acc
-TEST-OBJS = test-acc.o scanner.o parser.o
-TEST-PROG = test-acc
+OBJS = sbcc.o scanner.o parser.o
+PROG = sbcc
+TEST-OBJS = test-sbcc.o scanner.o parser.o
+TEST-PROG = test-sbcc
 
 ALL: $(PROG)
 
-acc.o: types.h scanner.h parser.h
+sbcc.o: types.h scanner.h parser.h
 scanner.o: types.h scanner.h
 parser.o: types.h parser.h
 
