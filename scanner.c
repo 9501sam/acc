@@ -5,4 +5,5 @@
 token_t *scanning(char *str)
 {
     // TODO
+    return NULL;
 }

@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall
 RM = rm -f
-OBJS = sbcc.o scanner.o parser.o
+OBJS = sbcc.o scanner.o parser.o set.o
 PROG = sbcc
-TEST-OBJS = test-sbcc.o scanner.o parser.o
+TEST-OBJS = test-sbcc.o scanner.o parser.o set.o
 TEST-PROG = test-sbcc
 
 ALL: $(PROG)
