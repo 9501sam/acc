@@ -23,11 +23,11 @@ static uint64_t fnv_hash(char *s, int len) {
 static void rehash(HashMap *map) {
     // Compute the size of the new hashmap.
     int nkeys = 0;
-    for (int i = 0; i < map->capacity; i++)
+    for (int i = 0; i < map->num_ents; i++)
         if (map->buckets[i].key)
             nkeys++;
 
-    int cap = map->capacity;
+    int cap = map->num_ents;
     while ((nkeys * 100) / cap >= LOW_WATERMARK)
         cap = cap * 2;
     assert(cap > 0);
@@ -35,16 +35,16 @@ static void rehash(HashMap *map) {
     // Create a new hashmap and copy all key-values.
     HashMap map2 = {};
     map2.buckets = calloc(cap, sizeof(HashEntry));
-    map2.capacity = cap;
+    map2.num_ents = cap;
     map2.num_toks = map->num_toks;
 
-    for (int i = 0; i < map->capacity; i++) {
+    for (int i = 0; i < map->num_ents; i++) {
         HashEntry *ent = &map->buckets[i];
         if (ent->key)
             hashmap_put2(&map2, ent->key, ent->keylen, ent->val);
     }
 
-    assert(map2.used == nkeys);
+    assert(map2.num_used_ents == nkeys);
     *map = map2;
 }
 
@@ -64,8 +64,8 @@ static HashEntry *get_entry(HashMap *map, char *key, int keylen) {
 
     uint64_t hash = fnv_hash(key, keylen);
 
-    for (int i = 0; i < map->capacity; i++) {
-        HashEntry *ent = &map->buckets[(hash + i) % map->capacity];
+    for (int i = 0; i < map->num_ents; i++) {
+        HashEntry *ent = &map->buckets[(hash + i) % map->num_ents];
         if (match(ent, key, keylen))
             return ent;
         if (ent->key == NULL)
@@ -77,16 +77,16 @@ static HashEntry *get_entry(HashMap *map, char *key, int keylen) {
 static HashEntry *get_or_insert_entry(HashMap *map, char *key, int keylen) {
     if (!map->buckets) {
         map->buckets = calloc(INIT_SIZE, sizeof(HashEntry));
-        map->capacity = INIT_SIZE;
+        map->num_ents = INIT_SIZE;
         map->num_toks = 0;
-    } else if ((map->used * 100) / map->capacity >= HIGH_WATERMARK) {
+    } else if ((map->num_used_ents * 100) / map->num_ents >= HIGH_WATERMARK) {
         rehash(map);
     }
 
     uint64_t hash = fnv_hash(key, keylen);
 
-    for (int i = 0; i < map->capacity; i++) {
-        HashEntry *ent = &map->buckets[(hash + i) % map->capacity];
+    for (int i = 0; i < map->num_ents; i++) {
+        HashEntry *ent = &map->buckets[(hash + i) % map->num_ents];
 
         if (match(ent, key, keylen))
             return ent;
@@ -95,7 +95,7 @@ static HashEntry *get_or_insert_entry(HashMap *map, char *key, int keylen) {
             ent->key = key;
             ent->keylen = keylen;
             ent->val = 0;
-            map->used++;
+            map->num_used_ents++;
             return ent;
         }
     }
@@ -154,7 +154,7 @@ void hashmap_test(void)
         assert(hashmap_get(map, format("key %d", i)) == 1);
     for (int i = 4000; i < 5000; i++)
         assert(hashmap_get(map, format("key %d", i)) == 2);
-    assert(map->used == 5000);
+    assert(map->num_used_ents == 5000);
     assert(map->num_toks == 6000);
 
     // <stdio.h>
@@ -212,7 +212,7 @@ void hashmap_test(void)
     hashmap_put(map2_res, "sCAnf");
     hashmap_put(map2_bkt, "(");
     hashmap_put(map2_punc, "\"");
-    hashmap_put(map2_fmt, "\%c");
+    hashmap_put(map2_fmt, "%c");
     hashmap_put(map2_punc, "\"");
     hashmap_put(map2_punc, ",");
     hashmap_put(map2_undef, "&cb");
@@ -251,7 +251,7 @@ void hashmap_test(void)
 #define PRINT_MAP(map) \
     if (map->buckets) { \
         printf(#map ": %d\n", map->num_toks); \
-        for (int i = 0; i < map->capacity; i++) { \
+        for (int i = 0; i < map->num_ents; i++) { \
             HashEntry *ent = &map->buckets[i]; \
             if (ent->key) { \
                 printf("%s", ent->key); \

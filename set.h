@@ -17,8 +17,8 @@ typedef struct {
 
 typedef struct {
     HashEntry *buckets;
-    int capacity;
-    int used;
+    int num_ents;
+    int num_used_ents;
     int num_toks;
 } HashMap;
 
