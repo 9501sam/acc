@@ -248,19 +248,19 @@ void hashmap_test(void)
     total += map2_skip->num_toks;
     printf("Total: %d tokens\n\n", total);
 
-#define PRINT_MAP(map) \
-    if (map->buckets) { \
-        printf(#map ": %d\n", map->num_toks); \
-        for (int i = 0; i < map->num_ents; i++) { \
-            HashEntry *ent = &map->buckets[i]; \
-            if (ent->key) { \
-                printf("%s", ent->key); \
-                if (ent->val > 1) \
-                    printf(" (x%d)", ent->val); \
-                printf("\n"); \
-            } \
-        } \
-        printf("\n"); \
+#define PRINT_MAP(map)                              \
+    if (map->buckets) {                             \
+        printf(#map ": %d\n", map->num_toks);       \
+        for (int i = 0; i < map->num_ents; i++) {   \
+            HashEntry *ent = &map->buckets[i];      \
+            if (ent->key) {                         \
+                printf("%s", ent->key);             \
+                if (ent->val > 1)                   \
+                    printf(" (x%d)", ent->val);     \
+                printf("\n");                       \
+            }                                       \
+        }                                           \
+        printf("\n");                               \
     }
 
     PRINT_MAP(map2_res);
