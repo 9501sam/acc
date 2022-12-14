@@ -18,8 +18,10 @@ typedef enum {
 	PRINTED_TOKEN,
 	COMMENT,
 	UNDEFINED_TOKEN,
-	SKIPPED_TOKEN
+	SKIPPED_TOKEN,
+    NUM_TYPES,
 } token_type;
+
 typedef struct {
 	token_type type;
 	char *str; //value

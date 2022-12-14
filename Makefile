@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 RM = rm -f
 OBJS = sbcc.o scanner.o parser.o set.o
 PROG = sbcc

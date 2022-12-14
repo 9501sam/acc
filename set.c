@@ -1,4 +1,5 @@
 #include "set.h"
+#include "types.h"
 
 // Initial hash bucket size
 #define INIT_SIZE 16
@@ -136,6 +137,25 @@ static char *format(char *fmt, ...)
     return buf;
 }
 
+const char *type_names[NUM_TYPES] = {
+    "Reserved word",
+    "Library name",
+    "Identifier",
+    "Character",
+    "Number",
+    "Pointer",
+    "Bracket",
+    "Operator",
+    "Comparator",
+    "Address",
+    "Punctuation",
+    "Format specifier",
+    "Printed token",
+    "Comment",
+    "Undefined token",
+    "Skipped token",
+};
+
 void hashmap_test(void)
 {
     printf("======test hashmap======\n");
@@ -166,118 +186,77 @@ void hashmap_test(void)
     // sCAnf("%c", &cb);
     // ia = *forif + (-2);
     // ia = 5 * ie;
-    HashMap *map2_res = calloc(1, sizeof(HashMap));
-    HashMap *map2_lib = calloc(1, sizeof(HashMap));
-    HashMap *map2_id = calloc(1, sizeof(HashMap));
-    HashMap *map2_char = calloc(1, sizeof(HashMap));
-    HashMap *map2_num = calloc(1, sizeof(HashMap));
-    HashMap *map2_ptr = calloc(1, sizeof(HashMap));
-    HashMap *map2_bkt = calloc(1, sizeof(HashMap));
-    HashMap *map2_op = calloc(1, sizeof(HashMap));
-    HashMap *map2_cmp = calloc(1, sizeof(HashMap));
-    HashMap *map2_punc = calloc(1, sizeof(HashMap));
-    HashMap *map2_fmt = calloc(1, sizeof(HashMap));
-    HashMap *map2_prtd = calloc(1, sizeof(HashMap));
-    HashMap *map2_cmmt = calloc(1, sizeof(HashMap));
-    HashMap *map2_undef = calloc(1, sizeof(HashMap));
-    HashMap *map2_skip = calloc(1, sizeof(HashMap));
+    HashMap *map2 = calloc(NUM_TYPES, sizeof(HashMap));
 
-    hashmap_put(map2_cmp, "<");
-    hashmap_put(map2_undef, "stdio.h");
-    hashmap_put(map2_skip, ">");
-    hashmap_put(map2_res, "int");
-    hashmap_put(map2_id, "ia");
-    hashmap_put(map2_punc, ",");
-    hashmap_put(map2_ptr, "*ie");
-    hashmap_put(map2_punc, ",");
-    hashmap_put(map2_id, "forif");
-    hashmap_put(map2_punc, ";");
-    hashmap_put(map2_res, "char");
-    hashmap_put(map2_id, "ca");
-    hashmap_put(map2_punc, ";");
-    hashmap_put(map2_id, "ia");
-    hashmap_put(map2_op, "=");
-    hashmap_put(map2_bkt, "(");
-    hashmap_put(map2_ptr, "*ie");
-    hashmap_put(map2_bkt, ")");
-    hashmap_put(map2_op, "+");
-    hashmap_put(map2_undef, "ib");
-    hashmap_put(map2_skip, "; ia = ia *2;");
-    hashmap_put(map2_id, "ca");
-    hashmap_put(map2_op, "=");
-    hashmap_put(map2_char, "'A'");
-    hashmap_put(map2_punc, ";");
-    hashmap_put(map2_undef, "whilefor");
-    hashmap_put(map2_skip, "(ia<3) forif = forif + 1;");
-    hashmap_put(map2_res, "sCAnf");
-    hashmap_put(map2_bkt, "(");
-    hashmap_put(map2_punc, "\"");
-    hashmap_put(map2_fmt, "%c");
-    hashmap_put(map2_punc, "\"");
-    hashmap_put(map2_punc, ",");
-    hashmap_put(map2_undef, "&cb");
-    hashmap_put(map2_skip, ");");
-    hashmap_put(map2_id, "ia");
-    hashmap_put(map2_op, "=");
-    hashmap_put(map2_op, "*");
-    hashmap_put(map2_id, "forif");
-    hashmap_put(map2_op, "+");
-    hashmap_put(map2_num, "(-2)");
-    hashmap_put(map2_punc, ";");
-    hashmap_put(map2_id, "ia");
-    hashmap_put(map2_op, "=");
-    hashmap_put(map2_num, "5");
-    hashmap_put(map2_ptr, "*ie");
-    hashmap_put(map2_punc, ";");
+    hashmap_put(&map2[COMPARATOR], "<");
+    hashmap_put(&map2[UNDEFINED_TOKEN], "stdio.h");
+    hashmap_put(&map2[SKIPPED_TOKEN], ">");
+    hashmap_put(&map2[RESERVED_WORD], "int");
+    hashmap_put(&map2[IDENTIFIER], "ia");
+    hashmap_put(&map2[PUNCTUATION], ",");
+    hashmap_put(&map2[POINTER], "*ie");
+    hashmap_put(&map2[PUNCTUATION], ",");
+    hashmap_put(&map2[IDENTIFIER], "forif");
+    hashmap_put(&map2[PUNCTUATION], ";");
+    hashmap_put(&map2[RESERVED_WORD], "char");
+    hashmap_put(&map2[IDENTIFIER], "ca");
+    hashmap_put(&map2[PUNCTUATION], ";");
+    hashmap_put(&map2[IDENTIFIER], "ia");
+    hashmap_put(&map2[OPERATOR], "=");
+    hashmap_put(&map2[BRACKET], "(");
+    hashmap_put(&map2[POINTER], "*ie");
+    hashmap_put(&map2[BRACKET], ")");
+    hashmap_put(&map2[OPERATOR], "+");
+    hashmap_put(&map2[UNDEFINED_TOKEN], "ib");
+    hashmap_put(&map2[SKIPPED_TOKEN], "; ia = ia *2;");
+    hashmap_put(&map2[IDENTIFIER], "ca");
+    hashmap_put(&map2[OPERATOR], "=");
+    hashmap_put(&map2[CHARACTER], "'A'");
+    hashmap_put(&map2[PUNCTUATION], ";");
+    hashmap_put(&map2[UNDEFINED_TOKEN], "whilefor");
+    hashmap_put(&map2[SKIPPED_TOKEN], "(ia<3) forif = forif + 1;");
+    hashmap_put(&map2[RESERVED_WORD], "sCAnf");
+    hashmap_put(&map2[BRACKET], "(");
+    hashmap_put(&map2[PUNCTUATION], "\"");
+    hashmap_put(&map2[FORMAT_SPECIFIER], "%c");
+    hashmap_put(&map2[PUNCTUATION], "\"");
+    hashmap_put(&map2[PUNCTUATION], ",");
+    hashmap_put(&map2[UNDEFINED_TOKEN], "&cb");
+    hashmap_put(&map2[SKIPPED_TOKEN], ");");
+    hashmap_put(&map2[IDENTIFIER], "ia");
+    hashmap_put(&map2[OPERATOR], "=");
+    hashmap_put(&map2[OPERATOR], "*");
+    hashmap_put(&map2[IDENTIFIER], "forif");
+    hashmap_put(&map2[OPERATOR], "+");
+    hashmap_put(&map2[NUMBER], "(-2)");
+    hashmap_put(&map2[PUNCTUATION], ";");
+    hashmap_put(&map2[IDENTIFIER], "ia");
+    hashmap_put(&map2[OPERATOR], "=");
+    hashmap_put(&map2[NUMBER], "5");
+    hashmap_put(&map2[POINTER], "*ie");
+    hashmap_put(&map2[PUNCTUATION], ";");
 
     int total = 0;
-    total += map2_res->num_toks;
-    total += map2_lib->num_toks;
-    total += map2_id->num_toks;
-    total += map2_char->num_toks;
-    total += map2_num->num_toks;
-    total += map2_ptr->num_toks;
-    total += map2_bkt->num_toks;
-    total += map2_op->num_toks;
-    total += map2_cmp->num_toks;
-    total += map2_punc->num_toks;
-    total += map2_fmt->num_toks;
-    total += map2_prtd->num_toks;
-    total += map2_cmmt->num_toks;
-    total += map2_undef->num_toks;
-    total += map2_skip->num_toks;
+    for (int i = 0; i < NUM_TYPES; i++)
+        total += map2[i].num_toks;
     printf("Total: %d tokens\n\n", total);
 
-#define PRINT_MAP(map)                              \
-    if (map->buckets) {                             \
-        printf(#map ": %d\n", map->num_toks);       \
-        for (int i = 0; i < map->num_ents; i++) {   \
-            HashEntry *ent = &map->buckets[i];      \
-            if (ent->key) {                         \
-                printf("%s", ent->key);             \
-                if (ent->val > 1)                   \
-                    printf(" (x%d)", ent->val);     \
-                printf("\n");                       \
-            }                                       \
-        }                                           \
-        printf("\n");                               \
+    for (int i = 0; i < NUM_TYPES; i++) {
+        HashMap *map = &map2[i];
+        if (!map->buckets)
+            continue;
+        printf("%s: %d\n", type_names[i], map->num_toks);
+        for (int i = 0; i < map->num_ents; i++) {
+            HashEntry *ent = &map->buckets[i];
+            if (!ent->key)
+                continue;
+            printf("%s", ent->key);
+            if (ent->val > 1)
+                printf(" (x%d)", ent->val);
+            printf("\n");
+        }
+        printf("\n");
     }
-
-    PRINT_MAP(map2_res);
-    PRINT_MAP(map2_lib);
-    PRINT_MAP(map2_id);
-    PRINT_MAP(map2_char);
-    PRINT_MAP(map2_num);
-    PRINT_MAP(map2_ptr);
-    PRINT_MAP(map2_bkt);
-    PRINT_MAP(map2_op);
-    PRINT_MAP(map2_cmp);
-    PRINT_MAP(map2_punc);
-    PRINT_MAP(map2_fmt);
-    PRINT_MAP(map2_prtd);
-    PRINT_MAP(map2_cmmt);
-    PRINT_MAP(map2_undef);
-    PRINT_MAP(map2_skip);
 
     printf("OK\n\n");
 }
