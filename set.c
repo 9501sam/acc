@@ -238,7 +238,8 @@ void hashmap_test(void)
 
     int total = 0;
     for (int i = 0; i < NUM_TYPES; i++)
-        total += map2[i].num_toks;
+        if (map2[i].buckets)
+            total += map2[i].num_toks;
     printf("Total: %d tokens\n\n", total);
 
     for (int i = 0; i < NUM_TYPES; i++) {
