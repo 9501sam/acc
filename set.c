@@ -156,6 +156,36 @@ const char *type_names[NUM_TYPES] = {
     "Skipped token",
 };
 
+static void print_maps(HashMap maps[])
+{
+    int total = 0;
+    for (int i = 0; i < NUM_TYPES; i++)
+        if (maps[i].buckets)
+            total += maps[i].num_toks;
+    printf("Total: %d tokens\n\n", total);
+
+    for (int i = 0; i < NUM_TYPES; i++) {
+        HashMap *map = &maps[i];
+        if (!map->buckets)
+            continue;
+        printf("%s: %d\n", type_names[i], map->num_toks);
+        for (int i = 0; i < map->num_ents; i++) {
+            HashEntry *ent = &map->buckets[i];
+            if (!ent->key)
+                continue;
+
+            char key[ent->keylen + 1];
+            strncpy(key, ent->key, ent->keylen);
+            key[ent->keylen] = '\0';
+            printf("%s", key);
+            if (ent->val > 1)
+                printf(" (x%d)", ent->val);
+            printf("\n");
+        }
+        printf("\n");
+    }
+}
+
 void hashmap_test(void)
 {
     printf("======test hashmap======\n");
@@ -193,7 +223,6 @@ void hashmap_test(void)
     // ia = *forif + (-2);
     // ia = 5 * ie;
     HashMap *map2 = calloc(NUM_TYPES, sizeof(HashMap));
-
     hashmap_put(&map2[COMPARATOR], "<", strlen("<"));
     hashmap_put(&map2[UNDEFINED_TOKEN], "stdio.h", strlen("stdio.h"));
     hashmap_put(&map2[SKIPPED_TOKEN], ">", strlen(">"));
@@ -241,29 +270,93 @@ void hashmap_test(void)
     hashmap_put(&map2[NUMBER], "5", strlen("5"));
     hashmap_put(&map2[POINTER], "*ie", strlen("*ie"));
     hashmap_put(&map2[PUNCTUATION], ";", strlen(";"));
+    print_maps(map2);
 
-    int total = 0;
-    for (int i = 0; i < NUM_TYPES; i++)
-        if (map2[i].buckets)
-            total += map2[i].num_toks;
-    printf("Total: %d tokens\n\n", total);
+    // int a, bb, ccc, dddd;
+    printf("========\n");
+    printf("int a, bb, ccc, dddd;\n\n");
 
-    for (int i = 0; i < NUM_TYPES; i++) {
-        HashMap *map = &map2[i];
-        if (!map->buckets)
-            continue;
-        printf("%s: %d\n", type_names[i], map->num_toks);
-        for (int i = 0; i < map->num_ents; i++) {
-            HashEntry *ent = &map->buckets[i];
-            if (!ent->key)
-                continue;
-            printf("%s", ent->key);
-            if (ent->val > 1)
-                printf(" (x%d)", ent->val);
-            printf("\n");
-        }
-        printf("\n");
+    typedef struct Tok Tok;
+    struct Tok {
+        Tok *next;
+        char *start_locaiton;
+        int len;
+    };
+
+    Tok *new_token(char *start, int len)
+    {
+        Tok *t = calloc(1, sizeof(Tok));
+        t->start_locaiton = start;
+        t->len = len;
+        return t;
     }
+
+    // return length of reserved word
+    int read_reserved(const char *start)
+    {
+        if (!strncmp(start, "int", 3)) {
+            return 3;
+        }
+        return 0;
+    }
+
+    // return length of reserved identifier
+    int read_id(const char *start)
+    {
+        char *ptr = start;
+        while (*ptr && 
+                *ptr != ' ' &&
+                *ptr != ',' &&
+                *ptr != ';')
+            ptr++;
+        return ptr - start;
+    }
+
+    // return length of punctuator
+    int read_punc(const char *start)
+    {
+        if ((*start == ',') || (*start == ';'))
+            return 1;
+        return 0;
+    }
+
+    Tok head = {};
+    Tok *cur = &head;
+    char *src = "int a, bb, ccc, dddd;"; // read from file
+    char *p = src;
+    HashMap *map3 = calloc(NUM_TYPES, sizeof(HashMap));
+
+    while (*p) {
+        // reserved word
+        int res_len = read_reserved(p);
+        if (res_len) {
+            hashmap_put(&map3[RESERVED_WORD], p, res_len);
+            cur = cur->next = new_token(p, res_len);
+            p += res_len;
+            continue;
+        }
+
+        // identifier
+        int id_len = read_id(p);
+        if (id_len) {
+            hashmap_put(&map3[IDENTIFIER], p, id_len);
+            cur = cur->next = new_token(p, id_len);
+            p += id_len;
+            continue;
+        }
+
+        // punctuators
+        int punc_len = read_punc(p);
+        if (punc_len) {
+            hashmap_put(&map3[PUNCTUATION], p, punc_len);
+            cur = cur->next = new_token(p, punc_len);
+            p += punc_len;
+            continue;
+        }
+
+        p++; // space
+    }
+    print_maps(map3);
 
     printf("OK\n\n");
 }
