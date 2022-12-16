@@ -109,9 +109,9 @@ int hashmap_get(HashMap *map, char *key)
     return ent ? ent->val : UNUSED;
 }
 
-void hashmap_put(HashMap *map, char *key)
+void hashmap_put(HashMap *map, char *key, int keylen)
 {
-    HashEntry *ent = get_or_insert_entry(map, key, strlen(key));
+    HashEntry *ent = get_or_insert_entry(map, key, keylen);
     (ent->val)++;
     (map->num_toks)++;
 }
@@ -162,14 +162,20 @@ void hashmap_test(void)
 
     HashMap *map = calloc(1, sizeof(HashMap));
 
+    char *key;
     for (int i = 0; i < 5000; i++) {
-        hashmap_put(map, format("key %d", i));
+        key = format("key %d", i);
+        hashmap_put(map, key, strlen(key));
         assert(map->num_toks == (i + 1));
     }
-    for (int i = 0; i < 5000; i++)
-        assert(hashmap_get(map, format("key %d", i)) == 1);
-    for (int i = 4000; i < 5000; i++)
-        hashmap_put(map, format("key %d", i));
+    for (int i = 0; i < 5000; i++) {
+        key = format("key %d", i);
+        assert(hashmap_get(map, key) == 1);
+    }
+    for (int i = 4000; i < 5000; i++) {
+        key = format("key %d", i);
+        hashmap_put(map, key, strlen(key));
+    }
     for (int i = 0; i < 4000; i++)
         assert(hashmap_get(map, format("key %d", i)) == 1);
     for (int i = 4000; i < 5000; i++)
@@ -188,53 +194,53 @@ void hashmap_test(void)
     // ia = 5 * ie;
     HashMap *map2 = calloc(NUM_TYPES, sizeof(HashMap));
 
-    hashmap_put(&map2[COMPARATOR], "<");
-    hashmap_put(&map2[UNDEFINED_TOKEN], "stdio.h");
-    hashmap_put(&map2[SKIPPED_TOKEN], ">");
-    hashmap_put(&map2[RESERVED_WORD], "int");
-    hashmap_put(&map2[IDENTIFIER], "ia");
-    hashmap_put(&map2[PUNCTUATION], ",");
-    hashmap_put(&map2[POINTER], "*ie");
-    hashmap_put(&map2[PUNCTUATION], ",");
-    hashmap_put(&map2[IDENTIFIER], "forif");
-    hashmap_put(&map2[PUNCTUATION], ";");
-    hashmap_put(&map2[RESERVED_WORD], "char");
-    hashmap_put(&map2[IDENTIFIER], "ca");
-    hashmap_put(&map2[PUNCTUATION], ";");
-    hashmap_put(&map2[IDENTIFIER], "ia");
-    hashmap_put(&map2[OPERATOR], "=");
-    hashmap_put(&map2[BRACKET], "(");
-    hashmap_put(&map2[POINTER], "*ie");
-    hashmap_put(&map2[BRACKET], ")");
-    hashmap_put(&map2[OPERATOR], "+");
-    hashmap_put(&map2[UNDEFINED_TOKEN], "ib");
-    hashmap_put(&map2[SKIPPED_TOKEN], "; ia = ia *2;");
-    hashmap_put(&map2[IDENTIFIER], "ca");
-    hashmap_put(&map2[OPERATOR], "=");
-    hashmap_put(&map2[CHARACTER], "'A'");
-    hashmap_put(&map2[PUNCTUATION], ";");
-    hashmap_put(&map2[UNDEFINED_TOKEN], "whilefor");
-    hashmap_put(&map2[SKIPPED_TOKEN], "(ia<3) forif = forif + 1;");
-    hashmap_put(&map2[RESERVED_WORD], "sCAnf");
-    hashmap_put(&map2[BRACKET], "(");
-    hashmap_put(&map2[PUNCTUATION], "\"");
-    hashmap_put(&map2[FORMAT_SPECIFIER], "%c");
-    hashmap_put(&map2[PUNCTUATION], "\"");
-    hashmap_put(&map2[PUNCTUATION], ",");
-    hashmap_put(&map2[UNDEFINED_TOKEN], "&cb");
-    hashmap_put(&map2[SKIPPED_TOKEN], ");");
-    hashmap_put(&map2[IDENTIFIER], "ia");
-    hashmap_put(&map2[OPERATOR], "=");
-    hashmap_put(&map2[OPERATOR], "*");
-    hashmap_put(&map2[IDENTIFIER], "forif");
-    hashmap_put(&map2[OPERATOR], "+");
-    hashmap_put(&map2[NUMBER], "(-2)");
-    hashmap_put(&map2[PUNCTUATION], ";");
-    hashmap_put(&map2[IDENTIFIER], "ia");
-    hashmap_put(&map2[OPERATOR], "=");
-    hashmap_put(&map2[NUMBER], "5");
-    hashmap_put(&map2[POINTER], "*ie");
-    hashmap_put(&map2[PUNCTUATION], ";");
+    hashmap_put(&map2[COMPARATOR], "<", strlen("<"));
+    hashmap_put(&map2[UNDEFINED_TOKEN], "stdio.h", strlen("stdio.h"));
+    hashmap_put(&map2[SKIPPED_TOKEN], ">", strlen(">"));
+    hashmap_put(&map2[RESERVED_WORD], "int", strlen("int"));
+    hashmap_put(&map2[IDENTIFIER], "ia", strlen("ia"));
+    hashmap_put(&map2[PUNCTUATION], ",", strlen(","));
+    hashmap_put(&map2[POINTER], "*ie", strlen("*ie"));
+    hashmap_put(&map2[PUNCTUATION], ",", strlen(","));
+    hashmap_put(&map2[IDENTIFIER], "forif", strlen("forif"));
+    hashmap_put(&map2[PUNCTUATION], ";", strlen(";"));
+    hashmap_put(&map2[RESERVED_WORD], "char", strlen("char"));
+    hashmap_put(&map2[IDENTIFIER], "ca", strlen("ca"));
+    hashmap_put(&map2[PUNCTUATION], ";", strlen(";"));
+    hashmap_put(&map2[IDENTIFIER], "ia", strlen("ia"));
+    hashmap_put(&map2[OPERATOR], "=", strlen("="));
+    hashmap_put(&map2[BRACKET], "(", strlen("("));
+    hashmap_put(&map2[POINTER], "*ie", strlen("*ie"));
+    hashmap_put(&map2[BRACKET], ")", strlen(")"));
+    hashmap_put(&map2[OPERATOR], "+", strlen("+"));
+    hashmap_put(&map2[UNDEFINED_TOKEN], "ib", strlen("ib"));
+    hashmap_put(&map2[SKIPPED_TOKEN], "; ia = ia *2;", strlen("; ia = ia *2;"));
+    hashmap_put(&map2[IDENTIFIER], "ca", strlen("ca"));
+    hashmap_put(&map2[OPERATOR], "=", strlen("="));
+    hashmap_put(&map2[CHARACTER], "'A'", strlen("'A'"));
+    hashmap_put(&map2[PUNCTUATION], ";", strlen(";"));
+    hashmap_put(&map2[UNDEFINED_TOKEN], "whilefor", strlen("whilefor"));
+    hashmap_put(&map2[SKIPPED_TOKEN], "(ia<3) forif = forif + 1;", strlen( "(a<3) forif = forif + 1;"));
+    hashmap_put(&map2[RESERVED_WORD], "sCAnf", strlen("sCAnf"));
+    hashmap_put(&map2[BRACKET], "(", strlen( "("));
+    hashmap_put(&map2[PUNCTUATION], "\"", strlen("\""));
+    hashmap_put(&map2[FORMAT_SPECIFIER], "%c", strlen("%c"));
+    hashmap_put(&map2[PUNCTUATION], "\"", strlen("\""));
+    hashmap_put(&map2[PUNCTUATION], ",", strlen(","));
+    hashmap_put(&map2[UNDEFINED_TOKEN], "&cb", strlen("&cb"));
+    hashmap_put(&map2[SKIPPED_TOKEN], ");", strlen(");"));
+    hashmap_put(&map2[IDENTIFIER], "ia", strlen("ia"));
+    hashmap_put(&map2[OPERATOR], "=", strlen("="));
+    hashmap_put(&map2[OPERATOR], "*", strlen("*"));
+    hashmap_put(&map2[IDENTIFIER], "forif", strlen("forif"));
+    hashmap_put(&map2[OPERATOR], "+", strlen("+"));
+    hashmap_put(&map2[NUMBER], "(-2)", strlen("(-2)"));
+    hashmap_put(&map2[PUNCTUATION], ";", strlen(";"));
+    hashmap_put(&map2[IDENTIFIER], "ia", strlen("ia"));
+    hashmap_put(&map2[OPERATOR], "=", strlen("="));
+    hashmap_put(&map2[NUMBER], "5", strlen("5"));
+    hashmap_put(&map2[POINTER], "*ie", strlen("*ie"));
+    hashmap_put(&map2[PUNCTUATION], ";", strlen(";"));
 
     int total = 0;
     for (int i = 0; i < NUM_TYPES; i++)
