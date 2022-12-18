@@ -9,6 +9,7 @@
 void test_scanning(void)
 {
     printf("======test scanning======\n");
+	test_extract_file();
 }
 
 void test_parsing(void)
