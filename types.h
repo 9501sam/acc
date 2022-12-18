@@ -1,7 +1,7 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-///*** scanner token ***///
+/* scanner token */
 typedef enum {
 	RESERVED_WORD,
 	LIBRARY_NAME,
@@ -27,7 +27,7 @@ typedef struct {
 	char *str; //value
 } token_t;
 
-///*** parser token ***///
+/* parser token */
 
 typedef struct _ast_node_t {
 } ast_node_t;
