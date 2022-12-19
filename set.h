@@ -23,7 +23,7 @@ typedef struct {
 } HashMap;
 
 int hashmap_get(HashMap *map, char *key);
-void hashmap_put(HashMap *map, char *key);
+void hashmap_put(HashMap *map, char *key, int keylen);
 void hashmap_put2(HashMap *map, char *key, int keylen, int val);
 void hashmap_test(void);
 
