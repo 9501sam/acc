@@ -1,68 +1,245 @@
 #include "types.h"
 #include "scanner.h"
 
-char** extract_file(char *path, int *tot_line){
-	FILE *pfile = fopen(path, "r");
-	fpos_t position;
+/* REGEX FLAG */
+#define ICASE REG_ICASE
+#define NONE 0
 
-	int mx_line = 100, len = 0;
-	char c;
-	char **arr = (char**)malloc(mx_line * sizeof(char*));
+/* PRIVATE FUNCTION */
+char* extract_file(char *path);
+bool startswith(char *p, char *q);
+// TODO
+bool match(char *p, char *format, int cflags);
+// TODO
+void skipspace(char *p);
 
-	fgetpos(pfile, &position);
-	do{
-		// reallocate array size
-		if (mx_line / 2 < *tot_line){
-			mx_line *= 2;
-			arr = (char**)realloc(arr, mx_line * sizeof(char*));
-		}
+/****************************************
+***        PUBLIC FUNCTION
+****************************************/
 
-		c = fgetc(pfile);
-		len++;
-
-		// assign line to array when reach '\n' or eof
-		if (c == '\n' || c == EOF){
-			if (len > 1){
-				fsetpos(pfile, &position);
-				arr[(*tot_line)] = (char*)calloc(len, sizeof(char));
-				fgets(arr[(*tot_line)], len, pfile);
-				fgetc(pfile); // skip '\n'
-				(*tot_line)++;
-			}
-			len = 0;
-			fgetpos(pfile, &position);
-		}
-	} while (c != EOF);
-	return arr;
-}
-
-token_t *scanning(char *path)
+token_t* scanning(char *path)
 {
-    // TODO
-	int tot_line = 0, cur_line = 0;
-	int tot_char = 0, cur_char = 0;
-	char **input = extract_file(path, &tot_line);
+	char *input = extract_file(path);
+	char *cur = input;
+	
+	if (input == NULL){
+		fprintf("[ERROR] input is NULL.\n");
+		return NULL;
+	}
+
+	// read token
+	while (*cur){
+		if (isalpha(*cur)){
+			// Reserved Word
+			if (match(p, "include", ICASE)){
+			}
+			if (match(p, "main", ICASE)){
+			}
+			if (match(p, "char", ICASE)){
+			}
+			if (match(p, "int", ICASE)){
+			}
+			if (match(p, "float", ICASE)){
+			}
+			if (match(p, "if", ICASE)){
+			}
+			if (match(p, "else", ICASE)){
+			}
+			if (match(p, "elseif", ICASE)){
+			}
+			if (match(p, "for", ICASE)){
+			}
+			if (match(p, "while", ICASE)){
+			}
+			if (match(p, "do", ICASE)){
+			}
+			if (match(p, "return", ICASE)){
+			}
+			if (match(p, "switch", ICASE)){
+			}
+			if (match(p, "case", ICASE)){
+			}
+			if (match(p, "printf", ICASE)){
+			}
+			if (match(p, "scanf", ICASE)){
+			}
+			// Identifier
+			if (match(p, "[[:alpha:]][[:alnum:]_]*", NONE)){
+			}
+		}
+		// Library Name
+		else if (match(p, "<[[:alpha:]]+\\.h>", NONE)){
+		}
+		// Character
+		else if (match(p, "'.'", NONE)){
+		}
+		// Number '123' '123.123' '.123'
+		else if (match(p, "([[:digit:]]+[.]?[[:digit:]]*)|([[:digit:]]*[.]?[[:digit:]]+)", NONE)){
+		}
+		// Number include bracket, optional sign symbol
+		else if (match(p, "(\\([+-]?[[:digit:]]+[.]?[[:digit:]]*[[:blank:]]*\\))|(\\([[:blank:]]*[+-]?[[:digit:]]*[.]?[[:digit:]]+[[:blank:]]*\\))", NONE)){
+		}
+		// Number include sign '+'
+		else if (match(p, "(\\+[[:digit:]]+[.]?[[:digit:]]*)|(\\+[[:digit:]]*[.]?[[:digit:]]+)", NONE)){
+		}
+		// Number include sign '-'
+		else if (match(p, "(-[[:digit:]]+[.]?[[:digit:]]*)|(-[[:digit:]]*[.]?[[:digit:]]+)", NONE)){
+		}
+		// Pointer
+		else if (match(p, "\\*[[:alpha:]][[:alnum:]_]*", NONE)){
+		}
+		// Bracket '('
+		else if (match(p, "\\(", NONE)){
+		}
+		// Bracket ')'
+		else if (match(p, "\\)", NONE)){
+		}
+		// Bracket '['
+		else if (match(p, "\\[", NONE)){
+		}
+		// Bracket ']'
+		else if (match(p, "\\]", NONE)){
+		}
+		// Bracket '{'
+		else if (match(p, "\\{", NONE)){
+		}
+		// Bracket '}'
+		else if (match(p, "\\}", NONE)){
+		}
+		// Operator '++'
+		else if (match(p, "\\+\\+", NONE)){
+		}
+		// Operator '+'
+		else if (match(p, "\\+", NONE)){
+		}
+		// Operator '--'
+		else if (match(p, "--", NONE)){
+		}
+		// Operator '-'
+		else if (match(p, "-", NONE)){
+		}
+		// Operator '*'
+		else if (match(p, "\\*", NONE)){
+		}
+		// Comment '//...'
+		else if (match(p, "//.*", NONE)){
+		}
+		// Operator '/'
+		else if (match(p, "/", NONE)){
+		}
+		// Format Specifier '%d' '%f' '%c'
+		else if (match(p, "%[dfc]?", NONE)){
+		}
+		// Operator '%'
+		else if (match(p, "%", NONE)){
+		}
+		// Operator '^'
+		else if (match(p, "\\^", NONE)){
+		}
+		// Address
+		else if (match(p, "&[[:alpha:]][[:alnum:]_]*", NONE)){
+		}
+		// Operator '&'
+		else if (match(p, "&", NONE)){
+		}
+		// Operator '|'
+		else if (match(p, "\\|", NONE)){
+		}
+		// Comparator '=='
+		else if (match(p, "==", NONE)){
+		}
+		// Operator '='
+		else if (match(p, "=", NONE)){
+		}
+		// Comparator '<='
+		else if (match(p, "<=", NONE)){
+		}
+		// Comparator '<'
+		else if (match(p, "<", NONE)){
+		}
+		// Comparator '>='
+		else if (match(p, ">=", NONE)){
+		}
+		// Comparator '>'
+		else if (match(p, ">", NONE)){
+		}
+		// Comparator '!='
+		else if (match(p, "!=", NONE)){
+		}
+		// Punctuation ','
+		else if (match(p, ",", NONE)){
+		}
+		// Punctuation ';'
+		else if (match(p, ";", NONE)){
+		}
+		// Punctuation ':'
+		else if (match(p, ":", NONE)){
+		}
+		// Punctuation '#'
+		else if (match(p, "#", NONE)){
+		}
+		// Punctuation '"'
+		else if (match(p, "\"", NONE)){
+		}
+		// Punctuation '''
+		else if (match(p, "'", NONE)){
+		}
+		// Format Specifier '\.'
+		else if (match(p, "\\\\.", NONE)){
+		}
+		// Comment '/*...*/'
+		else if (match(p, "/\*.*\*/", NONE)){
+		}
+		// Undefined token
+		else if (match(p, "[[:graph:]*]", NONE)){
+		}
+		
+		/* TODO: Flag check
+		 *	1. if FLAG_FOUND is set, check condition 2
+		 *	2. if FLAG_PRINTED is set, every token except Format specifier will be Printed token
+		 *	3. if FLAG_UNDEFINED is set, Skipped token will be added after  Undefined token
+		 */
+
+		/* TODO: skip space
+		 *	if pointer p encounter '\n', flag needs to reset
+		 */
+		skipspace();
+	}
+			
     return NULL;
 }
 
-///*** test ***///
-void test_extract_file(){
-    printf("======test extract_file======\n");
-	int tot_line = 0;
-	char **input;
-	input = extract_file("scanner-input.txt", &tot_line);
 
-	printf("Total line: %d\n", tot_line);
-	assert(tot_line == 5);
+/****************************************
+***        PRIVATE FUNCTION
+****************************************/
+
+char* extract_file(char *path){
+	FILE *pfile = fopen(path, "r");
 	
-	printf("[12345] == [%s]\n", input[0]);
-	assert(memcmp("12345", input[0], strlen(input[0])) == 0);
-	printf("[abc] == [%s]\n", input[1]);
-	assert(memcmp("abc", input[1], strlen(input[1])) == 0);
-	printf("[12] == [%s]\n", input[2]);
-	assert(memcmp("12", input[2], strlen(input[2])) == 0);
-	printf("[zxc] == [%s]\n", input[3]);
-	assert(memcmp("zxc", input[3], strlen(input[3])) == 0);
-	printf("[1222121] == [%s]\n", input[4]);
-	assert(memcmp("1222121", input[4], strlen(input[4])) == 0);
+	if (pfile == NULL){
+		fprintf("[ERROR] File %s doesn't exist.\n", path);
+		return NULL;
+	}
+
+	int length;
+	char *buffer;
+
+	fseek(pfile, 0, SEEK_END);
+	length = ftell(pfile);
+	rewind(pfile);
+	buffer = (char*)malloc(length * sizeof(char));
+
+	if (!buffer){
+		fprintf("[ERROR] Failed to allocate memory to buffer.\n");
+		return NULL;
+	}
+
+	fread(buffer, 1, length, pfile);
+	fclose(pfile);
+	return buffer;
+}
+
+bool startswith(char *p, char *q){
+	return strncmp(p, q, strlen(q)) == 0;
 }
