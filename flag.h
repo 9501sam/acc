@@ -4,11 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <regex.h>
 
 typedef enum{
 	FLAG_DECLARE = 0,
 	FLAG_INCLUDE,
-	FLAGSIZE
+	FLAG_PRINTED,
+	FLAG_FOUND,
+	FLAG_UNDEFINED,
+	FLAG_SIZE
 } Flag;
 
 // all flag record in one integer 'record' from left to right
