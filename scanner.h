@@ -3,9 +3,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <assert.h>
 #include <string.h>
 #include <limits.h>
+#include <ctype.h>
 
 token_t *scanning(char *path);
 
