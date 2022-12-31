@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 
 	// check if there is any arguments
 	if (argc == 0){
-		fprintf("Doesn't input any file\n");
+		fprintf(stderr, "Doesn't input any file\n");
 		return -1;
 	}
 
@@ -31,4 +31,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-// Test
