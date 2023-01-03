@@ -11,6 +11,8 @@
 
 Flags *flags;
 
+int token_count = 0; // TODO: bad practice in set.c
+
 static char* extract_file(char *path)
 {
     FILE *pfile = fopen(path, "r");
@@ -274,13 +276,14 @@ token_t* scanning(char *path)
     char *p = input;
     int len;
     flags = flag_init();
+    token_count = 0;
 
     if (input == NULL) {
         fprintf(stderr, "[ERROR] input is NULL.\n");
         return NULL;
     }
 
-    HashMap *map = calloc(NUM_TYPES, sizeof(HashMap));
+    HashMap *maps = calloc(NUM_TYPES, sizeof(HashMap));
 
     while (*p) {
         // newline
@@ -330,7 +333,7 @@ token_t* scanning(char *path)
         // PRINTED_TOKEN,
         // FORMAT_SPECIFIER,
         if (*p == '"') {
-            hashmap_put(&map[PUNCTUATION], p, strlen("\""));
+            maps_put(maps, p, strlen("\""), PUNCTUATION);
             p++;
             while (*p != '"' && *p != '\n') {
                 if (isspace(*p)) {
@@ -344,7 +347,7 @@ token_t* scanning(char *path)
                         match(p, "%f", NONE) ||
                         match(p, "%c", NONE)) {
                     len = 2;
-                    hashmap_put(&map[FORMAT_SPECIFIER], p, len);
+                    maps_put(maps, p, len, FORMAT_SPECIFIER);
                     p += len;
                     continue;
                 }
@@ -352,13 +355,13 @@ token_t* scanning(char *path)
                 // PRINTED_TOKEN
                 len = match(p, "[^[:space:]\"]*", NONE);
                 if (len) {
-                    hashmap_put(&map[PRINTED_TOKEN], p, len);
+                    maps_put(maps, p, len, PRINTED_TOKEN);
                     p += len;
                 }
 
             }
             if (*p == '"') {
-                hashmap_put(&map[PUNCTUATION], p, strlen("\""));
+                maps_put(maps, p, strlen("\""), PUNCTUATION);
                 p++;
             }
             continue;
@@ -368,7 +371,7 @@ token_t* scanning(char *path)
         // CHARACTER,
         len = read_character(p);
         if (len) {
-            hashmap_put(&map[CHARACTER], p, len);
+            maps_put(maps, p, len, CHARACTER);
             p += len;
             continue;
         }
@@ -376,7 +379,7 @@ token_t* scanning(char *path)
         // COMMENT,
         len = read_comment(p);
         if (len) {
-            hashmap_put(&map[COMMENT], p, len);
+            maps_put(maps, p, len, COMMENT);
             p += len;
             continue;
         }
@@ -385,7 +388,7 @@ token_t* scanning(char *path)
         if (*p == '*' && isalpha(p[1])) {
             len = read_pointer(p);
             if (len) {
-                hashmap_put(&map[POINTER], p, len);
+                maps_put(maps, p, len, POINTER);
                 p += len;
                 continue;
             }
@@ -395,7 +398,7 @@ token_t* scanning(char *path)
         if (*p == '&' && isalpha(p[1])) {
             len = read_address(p);
             if (len) {
-                hashmap_put(&map[ADDRESS], p, len);
+                maps_put(maps, p, len, ADDRESS);
                 p += len;
                 continue;
             }
@@ -404,7 +407,7 @@ token_t* scanning(char *path)
         // LIBRARY_NAME,
         len = read_library(p);
         if (len) {
-            hashmap_put(&map[LIBRARY_NAME], p, len);
+            maps_put(maps, p, len, LIBRARY_NAME);
             p += len;
             continue;
         }
@@ -413,7 +416,7 @@ token_t* scanning(char *path)
         // NUMBER,
         len = read_number(p);
         if (len) {
-            hashmap_put(&map[NUMBER], p, len);
+            maps_put(maps, p, len, NUMBER);
             p += len;
             continue;
         }
@@ -422,7 +425,7 @@ token_t* scanning(char *path)
         // BRACKET
         len = read_bracket(p);
         if (len) {
-            hashmap_put(&map[BRACKET], p, len);
+            maps_put(maps, p, len, BRACKET);
             p++;
             continue;
         }
@@ -430,7 +433,7 @@ token_t* scanning(char *path)
         // COMPARATOR,
         len = read_comparator(p);
         if (len) {
-            hashmap_put(&map[COMPARATOR], p, len);
+            maps_put(maps, p, len, COMPARATOR);
             p += len;
             continue;
         }
@@ -438,7 +441,7 @@ token_t* scanning(char *path)
         // OPERATOR,
         len = read_operator(p);
         if (len) {
-            hashmap_put(&map[OPERATOR], p, len);
+            maps_put(maps, p, len, OPERATOR);
             p += len;
             continue;
         }
@@ -446,7 +449,7 @@ token_t* scanning(char *path)
         // PUNCTUATION,
         len = read_punctuation(p);
         if (len) {
-            hashmap_put(&map[PUNCTUATION], p, len);
+            maps_put(maps, p, len, PUNCTUATION);
             p += len;
             continue;
         }
@@ -457,9 +460,9 @@ token_t* scanning(char *path)
         len = read_word(p);
         if (len) {
             if (is_reserved_word(p, len))
-                hashmap_put(&map[RESERVED_WORD], p, len);
+                maps_put(maps, p, len, RESERVED_WORD);
             else
-                hashmap_put(&map[IDENTIFIER], p, len);
+                maps_put(maps, p, len, IDENTIFIER);
             p += len;
             continue;
         }
@@ -468,7 +471,7 @@ token_t* scanning(char *path)
         // UNDEFINED_TOKEN,
         len = read_undefine_token(p);
         if (len) {
-            hashmap_put(&map[UNDEFINED_TOKEN], p, len);
+            maps_put(maps, p, len, UNDEFINED_TOKEN);
             p += len;
 
             // SKIPPED_TOKEN after UNDEFINED_TOKEN
@@ -476,8 +479,7 @@ token_t* scanning(char *path)
                 p++;
             len = read_skipped_token(p);
             if (len) {
-                printf("len = %d\n", len);
-                hashmap_put(&map[SKIPPED_TOKEN], p, len);
+                maps_put(maps, p, len, SKIPPED_TOKEN);
                 p += len;
                 continue;
 
@@ -488,14 +490,14 @@ token_t* scanning(char *path)
         }
     }
 
-    print_maps(map);
+    print_maps(maps);
     return NULL;
 }
 
 void scanner_test(void)
 {
     scanning("test/test1.c");
-    scanning("test/test2.c");
+    scanning("test/test3.c");
     scanning("test/test3.c");
     scanning("test/test_num.c");
     scanning("test/test_string.c");

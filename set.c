@@ -1,3 +1,5 @@
+#include <ctype.h>
+
 #include "set.h"
 #include "types.h"
 
@@ -11,6 +13,46 @@
 #define LOW_WATERMARK 50
 
 #define UNUSED (-1)
+
+extern int token_count; // TODO: bad practice
+
+const char *type_names[NUM_TYPES] = {
+    "Reserved word",
+    "Library name",
+    "Identifier",
+    "Character",
+    "Number",
+    "Pointer",
+    "Bracket",
+    "Operator",
+    "Comparator",
+    "Address",
+    "Punctuation",
+    "Format specifier",
+    "Printed token",
+    "Comment",
+    "Undefined token",
+    "Skipped token",
+};
+
+const char *type_names_lower[NUM_TYPES] = {
+    "reserved word",
+    "library name",
+    "identifier",
+    "character",
+    "number",
+    "pointer",
+    "bracket",
+    "operator",
+    "comparator",
+    "address",
+    "punctuation",
+    "format specifier",
+    "printed token",
+    "comment",
+    "undefined token",
+    "skipped token",
+};
 
 static uint64_t fnv_hash(char *s, int len) {
     uint64_t hash = 0xcbf29ce484222325;
@@ -124,6 +166,22 @@ void hashmap_put2(HashMap *map, char *key, int keylen, int val)
     ent->val = val;
 }
 
+void maps_put(HashMap maps[], char *key, int keylen, token_type type)
+{
+    if (type >= NUM_TYPES) {
+        fprintf(stderr, "maps_put()");
+        exit(EXIT_FAILURE);
+    }
+    char tok[keylen + 1];
+    strncpy(tok, key, keylen);
+    tok[keylen] = '\0';
+
+    token_count++;
+    printf("%d. token %s belongs to %s\n", token_count, tok, type_names_lower[type]);
+
+    hashmap_put(&maps[type], key, keylen);
+}
+
 ///*** test ***///
 static char *format(char *fmt, ...)
 {
@@ -139,32 +197,9 @@ static char *format(char *fmt, ...)
     return buf;
 }
 
-const char *type_names[NUM_TYPES] = {
-    "Reserved word",
-    "Library name",
-    "Identifier",
-    "Character",
-    "Number",
-    "Pointer",
-    "Bracket",
-    "Operator",
-    "Comparator",
-    "Address",
-    "Punctuation",
-    "Format specifier",
-    "Printed token",
-    "Comment",
-    "Undefined token",
-    "Skipped token",
-};
-
 void print_maps(HashMap maps[])
 {
-    int total = 0;
-    for (int i = 0; i < NUM_TYPES; i++)
-        if (maps[i].buckets)
-            total += maps[i].num_toks;
-    printf("Total: %d tokens\n\n", total);
+    printf("\nTotal: %d tokens\n\n", token_count);
 
     for (int i = 0; i < NUM_TYPES; i++) {
         HashMap *map = &maps[i];
