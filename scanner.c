@@ -129,7 +129,7 @@ static bool is_reserved_word(char *p, int len)
     };
 
     for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
-        if (!strncasecmp(p, kw[i], len))
+        if (!strncasecmp(p, kw[i], len) && (len == strlen(kw[i])))
             return true;
     return false;
 }
@@ -475,9 +475,11 @@ token_t* scanning(char *path)
         // LIBRARY_NAME,
         len = read_library(p);
         if (len) {
-            maps_put(maps, p, len, LIBRARY_NAME);
-            p += len;
-            continue;
+            if (flag_isset(flags, FLAG_INCLUDE)) {
+                maps_put(maps, p, len, LIBRARY_NAME);
+                p += len;
+                continue;
+            }
         }
 
         /* number */ 
