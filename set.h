@@ -28,6 +28,7 @@ int hashmap_get(HashMap *map, char *key);
 void hashmap_put(HashMap *map, char *key, int keylen);
 void hashmap_put2(HashMap *map, char *key, int keylen, int val);
 void maps_put(HashMap map[], char *key, int keylen, token_type type);
+HashEntry *get_entry(HashMap *map, char *key, int keylen);
 void hashmap_test(void);
 
 void print_maps(HashMap maps[]);

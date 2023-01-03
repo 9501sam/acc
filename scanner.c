@@ -9,6 +9,7 @@
 #define ICASE REG_ICASE
 #define NONE 0
 
+HashMap *maps;
 Flags *flags;
 
 int token_count = 0; // TODO: bad practice in set.c
@@ -270,6 +271,21 @@ static int read_skipped_token(char *p)
     return q - p;
 }
 
+static void handle_undefine_token_then_skip(char *p, int len)
+{
+    maps_put(maps, p, len, UNDEFINED_TOKEN);
+    p += len;
+
+    // SKIPPED_TOKEN after UNDEFINED_TOKEN
+    while (*p == ' ')
+        p++;
+    len = read_skipped_token(p);
+    if (len) {
+        maps_put(maps, p, len, SKIPPED_TOKEN);
+        p += len;
+    } 
+}
+
 token_t* scanning(char *path)
 {
     char *input = extract_file(path);
@@ -283,40 +299,60 @@ token_t* scanning(char *path)
         return NULL;
     }
 
-    HashMap *maps = calloc(NUM_TYPES, sizeof(HashMap));
+    maps = calloc(NUM_TYPES, sizeof(HashMap));
 
+    /* handle flags */
+
+    /* skip */
+    // skip newline
+    // skip whitespace
+
+    /* string */ 
+    // PRINTED_TOKEN,
+    // FORMAT_SPECIFIER,
+
+    /* combination */ 
+    // CHARACTER,
+    // COMMENT, // UNDEF: unclosed comment
+    // POINTER, // UNDEF: not found
+    // ADDRESS, // UNDEF: not found
+    // LIBRARY_NAME, // UNDEF
+
+    /* number */ 
+    // NUMBER, // UNDEF
+
+    /* other */ 
+    // BRACKET,
+    // OPERATOR,
+    // COMPARATOR,
+    // PUNCTUATION,
+
+    /* alphabet */ 
+    // RESERVED_WORD, // UNDEF
+    // IDENTIFIER, // UNDEF: not found
+
+    /* ?! */ 
+    // UNDEFINED_TOKEN,
+    // SKIPPED_TOKEN,
     while (*p) {
-        // newline
-        // whitespace
 
-        /* string */ 
-        // PRINTED_TOKEN,
-        // FORMAT_SPECIFIER,
+        /* handle flags */
+        if (startswith(p, "int") ||
+                startswith(p, "float") ||
+                startswith(p, "char")) {
+            flag_on(flags, FLAG_DECLARE);
+        }
 
-        /* combination */ 
-        // CHARACTER,
-        // COMMENT, // UNDEF: unclosed comment
-        // POINTER, // UNDEF: not found
-        // ADDRESS, // UNDEF: not found
-        // LIBRARY_NAME, // UNDEF
+        if (match(p, "#[ ]*include", NONE)) {
+            flag_on(flags, FLAG_INCLUDE);
+        }
 
-        /* number */ 
-        // NUMBER, // UNDEF
+        if ((*p == ';') || (*p == '\n')) {
+            flag_off(flags, FLAG_DECLARE);
+            flag_off(flags, FLAG_INCLUDE);
+        }
 
-        /* other */ 
-        // BRACKET,
-        // OPERATOR,
-        // COMPARATOR,
-        // PUNCTUATION,
-
-        /* alphabet */ 
-        // RESERVED_WORD, // UNDEF
-        // IDENTIFIER, // UNDEF: not found
-
-        /* ?! */ 
-        // UNDEFINED_TOKEN,
-        // SKIPPED_TOKEN,
-
+        /* skip */
         // Skip newline.
         if (*p == '\n') {
             p++;
@@ -388,8 +424,14 @@ token_t* scanning(char *path)
         if (*p == '*' && isalpha(p[1])) {
             len = read_pointer(p);
             if (len) {
-                maps_put(maps, p, len, POINTER);
-                p += len;
+                if (flag_isset(flags, FLAG_DECLARE) ||
+                    (get_entry(&maps[IDENTIFIER], p, len) != NULL)) {
+                    maps_put(maps, p, len, POINTER);
+                    p += len;
+
+                } else {
+                    handle_undefine_token_then_skip(p, len);
+                }
                 continue;
             }
         }
@@ -398,8 +440,13 @@ token_t* scanning(char *path)
         if (*p == '&' && isalpha(p[1])) {
             len = read_address(p);
             if (len) {
-                maps_put(maps, p, len, ADDRESS);
-                p += len;
+                if ((get_entry(&maps[IDENTIFIER], p, len) != NULL)) {
+                    maps_put(maps, p, len, POINTER);
+                    p += len;
+
+                } else {
+                    handle_undefine_token_then_skip(p, len);
+                }
                 continue;
             }
         }
@@ -459,11 +506,18 @@ token_t* scanning(char *path)
         // IDENTIFIER,
         len = read_word(p);
         if (len) {
-            if (is_reserved_word(p, len))
+            if (is_reserved_word(p, len)) {
                 maps_put(maps, p, len, RESERVED_WORD);
-            else
+                p += len;
+
+            } else if (flag_isset(flags, FLAG_DECLARE) ||
+                    (get_entry(&maps[IDENTIFIER], p, len) != NULL)) {
                 maps_put(maps, p, len, IDENTIFIER);
-            p += len;
+                p += len;
+
+            } else {
+                handle_undefine_token_then_skip(p, len);
+            }
             continue;
         }
 
@@ -471,19 +525,7 @@ token_t* scanning(char *path)
         // UNDEFINED_TOKEN,
         len = read_undefine_token(p);
         if (len) {
-            maps_put(maps, p, len, UNDEFINED_TOKEN);
-            p += len;
-
-            // SKIPPED_TOKEN after UNDEFINED_TOKEN
-            while (*p == ' ')
-                p++;
-            len = read_skipped_token(p);
-            if (len) {
-                maps_put(maps, p, len, SKIPPED_TOKEN);
-                p += len;
-                continue;
-
-            } 
+            handle_undefine_token_then_skip(p, len);
         } else { // shoud not reach here
             fprintf(stderr, "scanning error");
             exit(EXIT_FAILURE);

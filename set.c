@@ -101,7 +101,7 @@ static bool match(HashEntry *ent, char *key, int keylen) {
         memcmp(ent->key, key, keylen) == 0;
 }
 
-static HashEntry *get_entry(HashMap *map, char *key, int keylen) {
+HashEntry *get_entry(HashMap *map, char *key, int keylen) {
     if (!map->buckets)
         return NULL;
 
