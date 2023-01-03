@@ -14,6 +14,17 @@ Flags *flags;
 
 int token_count = 0; // TODO: bad practice in set.c
 
+HashMap *declared_set;
+static bool is_declared(char *key, int keylen)
+{
+    return get_entry(declared_set, key, keylen) != NULL;
+}
+
+static void declare(char *key, int keylen)
+{
+    hashmap_put(declared_set, key, keylen);
+}
+
 static char* extract_file(char *path)
 {
     FILE *pfile = fopen(path, "r");
@@ -271,19 +282,22 @@ static int read_skipped_token(char *p)
     return q - p;
 }
 
-static void handle_undefine_token_then_skip(char *p, int len)
+static int handle_undefine_token_then_skip(char *p, int len)
 {
-    maps_put(maps, p, len, UNDEFINED_TOKEN);
-    p += len;
+    char *q = p;
+
+    maps_put(maps, q, len, UNDEFINED_TOKEN);
+    q += len;
 
     // SKIPPED_TOKEN after UNDEFINED_TOKEN
-    while (*p == ' ')
-        p++;
-    len = read_skipped_token(p);
+    while (*q == ' ')
+        q++;
+    len = read_skipped_token(q);
     if (len) {
-        maps_put(maps, p, len, SKIPPED_TOKEN);
-        p += len;
+        maps_put(maps, q, len, SKIPPED_TOKEN);
+        q += len;
     } 
+    return q - p;
 }
 
 token_t* scanning(char *path)
@@ -300,6 +314,7 @@ token_t* scanning(char *path)
     }
 
     maps = calloc(NUM_TYPES, sizeof(HashMap));
+    declared_set = calloc(1, sizeof(HashMap));
 
     /* handle flags */
 
@@ -424,13 +439,18 @@ token_t* scanning(char *path)
         if (*p == '*' && isalpha(p[1])) {
             len = read_pointer(p);
             if (len) {
-                if (flag_isset(flags, FLAG_DECLARE) ||
-                    (get_entry(&maps[IDENTIFIER], p, len) != NULL)) {
+                if (flag_isset(flags, FLAG_DECLARE)) { // int *abc;
+                    declare(p + 1, len - 1); // abc
+                    maps_put(maps, p, len, POINTER);
+                    p += len;
+
+                } else if (is_declared(p + 1, len - 1)) { // *abc = 10;
                     maps_put(maps, p, len, POINTER);
                     p += len;
 
                 } else {
-                    handle_undefine_token_then_skip(p, len);
+                    len = handle_undefine_token_then_skip(p, len);
+                    p += len;
                 }
                 continue;
             }
@@ -440,12 +460,13 @@ token_t* scanning(char *path)
         if (*p == '&' && isalpha(p[1])) {
             len = read_address(p);
             if (len) {
-                if ((get_entry(&maps[IDENTIFIER], p, len) != NULL)) {
-                    maps_put(maps, p, len, POINTER);
+                if (is_declared(p + 1, len - 1)) { // return &abc;
+                    maps_put(maps, p, len, ADDRESS);
                     p += len;
 
                 } else {
-                    handle_undefine_token_then_skip(p, len);
+                    len = handle_undefine_token_then_skip(p, len);
+                    p += len;
                 }
                 continue;
             }
@@ -509,14 +530,18 @@ token_t* scanning(char *path)
             if (is_reserved_word(p, len)) {
                 maps_put(maps, p, len, RESERVED_WORD);
                 p += len;
+            } else if (flag_isset(flags, FLAG_DECLARE)) { // int abc;
+                declare(p, len);
+                maps_put(maps, p, len, IDENTIFIER);
+                p += len;
 
-            } else if (flag_isset(flags, FLAG_DECLARE) ||
-                    (get_entry(&maps[IDENTIFIER], p, len) != NULL)) {
+            } else if (is_declared(p, len)) { // abc = 10;
                 maps_put(maps, p, len, IDENTIFIER);
                 p += len;
 
             } else {
-                handle_undefine_token_then_skip(p, len);
+                len = handle_undefine_token_then_skip(p, len);
+                p += len;
             }
             continue;
         }
@@ -525,7 +550,8 @@ token_t* scanning(char *path)
         // UNDEFINED_TOKEN,
         len = read_undefine_token(p);
         if (len) {
-            handle_undefine_token_then_skip(p, len);
+            len = handle_undefine_token_then_skip(p, len);
+            p += len;
         } else { // shoud not reach here
             fprintf(stderr, "scanning error");
             exit(EXIT_FAILURE);
