@@ -6,21 +6,14 @@
 #include "parser.h"
 #include "set.h"
 
-void test_scanning(void)
-{
-    printf("======test scanning======\n");
-	// test_extract_file();
-}
+extern void hashmap_test(void);
+extern void scanner_test(void);
 
-void test_parsing(void)
-{
-    printf("======test parsing======\n");
-}
 
 int main(int argc, char **argv)
 {
-    hashmap_test();
-    test_scanning();
-    test_parsing();
+    // hashmap_test();
+    scanner_test();
+
     return 0;
 }

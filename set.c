@@ -73,6 +73,7 @@ static HashEntry *get_entry(HashMap *map, char *key, int keylen) {
             return NULL;
     }
     unreachable();
+    return NULL;
 }
 
 static HashEntry *get_or_insert_entry(HashMap *map, char *key, int keylen) {
@@ -101,6 +102,7 @@ static HashEntry *get_or_insert_entry(HashMap *map, char *key, int keylen) {
         }
     }
     unreachable();
+    return NULL;
 }
 
 int hashmap_get(HashMap *map, char *key)
@@ -156,7 +158,7 @@ const char *type_names[NUM_TYPES] = {
     "Skipped token",
 };
 
-static void print_maps(HashMap maps[])
+void print_maps(HashMap maps[])
 {
     int total = 0;
     for (int i = 0; i < NUM_TYPES; i++)
@@ -301,7 +303,7 @@ void hashmap_test(void)
     }
 
     // return length of reserved identifier
-    int read_id(const char *start)
+    int read_id(char *start)
     {
         char *ptr = start;
         while (*ptr && 

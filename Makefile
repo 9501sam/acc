@@ -6,10 +6,10 @@ PROG = sbcc
 TEST-OBJS = test-sbcc.o scanner.o parser.o set.o
 TEST-PROG = test-sbcc
 
-ALL: $(PROG)
+ALL: $(PROG) $(TEST-PROG)
 
-sbcc.o: types.h scanner.h parser.h
-scanner.o: types.h scanner.h
+sbcc.o: types.h scanner.h parser.h sbcc.c
+scanner.o: types.h scanner.h scanner.c
 parser.o: types.h parser.h
 
 %.o: %.c

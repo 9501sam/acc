@@ -27,4 +27,6 @@ void hashmap_put(HashMap *map, char *key, int keylen);
 void hashmap_put2(HashMap *map, char *key, int keylen, int val);
 void hashmap_test(void);
 
+void print_maps(HashMap maps[]);
+
 #endif /* __SET_H__ */

@@ -9,7 +9,7 @@ bool file_exist(char *path){
 	bool is_exist = true;
 	if (pfile == NULL)
 		is_exist = false;
-	fclose(path);
+	fclose(pfile);
 	return is_exist;
 }
 

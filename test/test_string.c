@@ -1,0 +1,6 @@
+"\n"
+"%d"
+"%d"
+"asdf"
+"asdf aaa"
+"xxx yyy %d\n\n\t%c"
