@@ -74,6 +74,7 @@ static int match(char *p, char *format, int cflags)
     pattern[0] = '^';
     pattern[1] = '\0';
     strncat(pattern, format, strlen(format));
+    cflags = cflags | REG_EXTENDED;
 
     if (0 != (rc = regcomp(&preg, pattern, cflags))) {
         printf("regcomp() failed, returning nonzero (%d)\n", rc);
@@ -197,22 +198,22 @@ static int read_number(char *p)
     // .123
     len = match(p, "[.][[:digit:]][[:digit:]]*", REG_EXTENDED);
     if (len)
-        return (p[len] != '.') ? len : 0;
+        return (!match(p + len, "[.[:alpha:]]", REG_EXTENDED | ICASE)) ? len : 0;
 
     // 123.123 or -123.123
     len = match(p, "[-]?[[:digit:]][[:digit:]]*[.][[:digit:]][[:digit:]]*", REG_EXTENDED);
     if (len)
-        return (p[len] != '.') ? len : 0;
+        return (!match(p + len, "[.[:alpha:]]", REG_EXTENDED | ICASE)) ? len : 0;
 
     // 123 or -123
     len = match(p, "[-]?[[:digit:]][[:digit:]]*", REG_EXTENDED);
     if (len)
-        return (p[len] != '.') ? len : 0;
+        return (!match(p + len, "[.[:alpha:]]", REG_EXTENDED | ICASE)) ? len : 0;
 
     // (-123.123)
     len = match(p, "\\([-][[:digit:]][[:digit:]]*[.][[:digit:]][[:digit:]]*\\)", REG_EXTENDED);
     if (len)
-        return len;
+        return (!match(p + len, "[.[:alpha:]]", REG_EXTENDED | ICASE)) ? len : 0;
 
     // (-123)
     len = match(p, "\\([-][[:digit:]][[:digit:]]*\\)", REG_EXTENDED);
@@ -222,11 +223,9 @@ static int read_number(char *p)
     return 0;
 }
 
-static int read_bracket(char *start)
+static int read_bracket(char *p)
 {
-    if ((*start == '(') | (*start == ')') |
-            (*start == '[') | (*start == ']') |
-            (*start == '{') | (*start == '}'))
+    if (match(p, "[\\(\\)\\[\\]\\{\\}]", NONE))
         return 1;
     return 0;
 }
@@ -363,8 +362,11 @@ token_t* scanning(char *path)
         }
 
         if ((*p == ';') || (*p == '\n')) {
-            flag_off(flags, FLAG_DECLARE);
-            flag_off(flags, FLAG_INCLUDE);
+            flag_reset(flags);
+        }
+
+        if (*p == '"') {
+            flag_switch(flags, FLAG_PRINTED);
         }
 
         /* skip */
@@ -409,7 +411,6 @@ token_t* scanning(char *path)
                     maps_put(maps, p, len, PRINTED_TOKEN);
                     p += len;
                 }
-
             }
             if (*p == '"') {
                 maps_put(maps, p, strlen("\""), PUNCTUATION);
@@ -420,7 +421,7 @@ token_t* scanning(char *path)
 
         /* combination */ 
         // CHARACTER,
-        len = read_character(p);
+        len = match(p, "'.'", NONE);
         if (len) {
             maps_put(maps, p, len, CHARACTER);
             p += len;
@@ -428,7 +429,7 @@ token_t* scanning(char *path)
         }
 
         // COMMENT,
-        len = read_comment(p);
+        len = match(p, "(//[^\n]*)|(/[*]([^*]|[*][^/])*[*]/)", NONE);
         if (len) {
             maps_put(maps, p, len, COMMENT);
             p += len;
@@ -473,7 +474,7 @@ token_t* scanning(char *path)
         }
 
         // LIBRARY_NAME,
-        len = read_library(p);
+        len = match(p, "<[[:alpha:]][[:alnum:]_]*[.]h>", ICASE);
         if (len) {
             if (flag_isset(flags, FLAG_INCLUDE)) {
                 maps_put(maps, p, len, LIBRARY_NAME);
@@ -493,7 +494,7 @@ token_t* scanning(char *path)
 
         /* other */ 
         // BRACKET
-        len = read_bracket(p);
+        len = match(p, "[]\\(\\)\\[{}]", NONE);
         if (len) {
             maps_put(maps, p, len, BRACKET);
             p++;
@@ -501,7 +502,7 @@ token_t* scanning(char *path)
         }
 
         // COMPARATOR,
-        len = read_comparator(p);
+        len = match(p, "([<>])|(>=)|(<=)|(==)|(!=)", NONE);
         if (len) {
             maps_put(maps, p, len, COMPARATOR);
             p += len;
@@ -509,7 +510,8 @@ token_t* scanning(char *path)
         }
 
         // OPERATOR,
-        len = read_operator(p);
+        // len = read_operator(p);
+        len = match(p, "([+][+])|(--)|([*])|([/])|([%])|([&])|([|])|([=])", REG_EXTENDED);
         if (len) {
             maps_put(maps, p, len, OPERATOR);
             p += len;
@@ -517,7 +519,7 @@ token_t* scanning(char *path)
         }
 
         // PUNCTUATION,
-        len = read_punctuation(p);
+        len = match(p, "[,;:#\"']", NONE);
         if (len) {
             maps_put(maps, p, len, PUNCTUATION);
             p += len;
@@ -527,7 +529,7 @@ token_t* scanning(char *path)
         /* alphabet */ 
         // RESERVED_WORD,
         // IDENTIFIER,
-        len = read_word(p);
+        len = match(p, "[[:alpha:]][[:alnum:]_]*", NONE);
         if (len) {
             if (is_reserved_word(p, len)) {
                 maps_put(maps, p, len, RESERVED_WORD);
@@ -566,11 +568,12 @@ token_t* scanning(char *path)
 
 void scanner_test(void)
 {
-    scanning("test/test1.c");
-    scanning("test/test3.c");
-    scanning("test/test3.c");
-    scanning("test/test_num.c");
-    scanning("test/test_string.c");
+    // scanning("test/test1.c");
+    scanning("test/test2.c");
+    // scanning("test/test3.c");
+    // scanning("test/test3.c");
+    // scanning("test/test_num.c");
+    // scanning("test/test_string.c");
 
     // match
     int len;

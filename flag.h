@@ -37,6 +37,10 @@ static inline void flag_off(Flags *flags, Flag ind){
 	flags->record &= ~(1 << (31 - ind));
 }
 
+static inline void flag_switch(Flags *flags, Flag ind){
+    flags->record ^= 1 << (31 - ind);
+}
+
 static inline bool flag_isset(Flags *flags, Flag ind){
 	return 1 & (flags->record >> (31 - ind));
 }

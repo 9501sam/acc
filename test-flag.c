@@ -32,6 +32,14 @@ void test_flag_off(){
 	assert(flags->record == 1 << 30);
 }
 
+void test_flag_switch(){
+	Flags *flags = flag_init();
+	flag_on(flags, FLAG_DECLARE);
+	assert(flags->record == 1 << 31);
+	flag_switch(flags, FLAG_DECLARE);
+    assert(flags->record == 0);
+}
+
 void test_flag_isset(){
 	Flags *flags = flag_init();
 	flag_on(flags, FLAG_DECLARE);
@@ -44,6 +52,7 @@ int main(int argc, char** argv){
 	test_flag_reset();
 	test_flag_on();
 	test_flag_off();
+    test_flag_switch();
 	test_flag_isset();
 	return 0;
 }
