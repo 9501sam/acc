@@ -89,38 +89,6 @@ static int match(char *p, char *format, int cflags)
     return pmatch[0].rm_eo - pmatch[0].rm_so;
 }
 
-static int read_character(char *p)
-{
-    if (p[0] == '\'' && p[2] == '\'')
-        return 3;
-    return 0;
-}
-
-static int read_comment(char *p)
-{
-    char *q = p;
-
-    // line comments.
-    if (startswith(p, "//")) {
-        q += 2;
-        while (*q != '\n')
-            q++;
-        return q - p;
-    }
-
-    // block comments.
-    if (startswith(p, "/*")) {
-        char *q = strstr(p + 2, "*/");
-        if (!q) { // TODO: might be unclosed
-            return 0;
-        }
-        q += 2;
-        return q - p;
-    }
-
-    return 0;
-}
-
 static bool is_reserved_word(char *p, int len)
 {
     static char *kw[] = {
@@ -153,8 +121,7 @@ static int read_pointer(char *p)
         return 0;
     q++;
     id_len = read_word(q);
-
-    if (id_len)
+if (id_len)
         return id_len + 1;
     return 0;
 }
@@ -172,23 +139,6 @@ static int read_address(char *p)
     if (id_len)
         return id_len + 1;
     return 0;
-}
-
-// <xxx.h>
-static int read_library(char *p)
-{
-    char *q = p;
-
-    if (*q != '<')
-        return 0;
-    q++;
-    while (!startswith(q, ".h>") && isalpha(*q))
-        q++;
-    if (startswith(q, ".h>")) {
-        q += strlen(".h>");
-        return q - p;
-    }
-    return 0; // undefine token
 }
 
 static int read_number(char *p)
@@ -223,75 +173,20 @@ static int read_number(char *p)
     return 0;
 }
 
-static int read_bracket(char *p)
-{
-    if (match(p, "[\\(\\)\\[\\]\\{\\}]", NONE))
-        return 1;
-    return 0;
-}
-
-static int read_operator(char *p) {
-    static char *kw[] = {
-        "++", "--",
-        "+", "-", "*", "/", "%", "^", "&", "|", "=",
-    };
-
-    for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
-        if (startswith(p, kw[i]))
-            return strlen(kw[i]);
-    return 0;
-}
-
-static int read_comparator(char *p)
-{
-    static char *kw[] = {
-        "==", "<=", ">=", "!=",
-        "<", ">",
-    };
-
-    for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
-        if (startswith(p, kw[i]))
-            return strlen(kw[i]);
-    return 0;
-}
-
-static int read_punctuation(char *p)
-{
-    static char *kw[] = {
-        ",", ";", ":","#", "\"", "'"
-    };
-
-    for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
-        if (startswith(p, kw[i]))
-            return strlen(kw[i]);
-    return 0;
-}
-
-static int read_undefine_token(char *p)
-{
-    return match(p, "[[:alnum:]_\\.]*", ICASE | REG_EXTENDED);
-}
-
-static int read_skipped_token(char *p)
-{
-    char *q = p;
-
-    while (*q != '\n')
-        q++;
-    return q - p;
-}
-
 static int handle_undefine_token_then_skip(char *p, int len)
 {
     char *q = p;
 
+	// UNDEFINED_TOKEN
     maps_put(maps, q, len, UNDEFINED_TOKEN);
     q += len;
 
+	// skip whitespace
+	len = match(q, "[[:blank:]]*", NONE);
+	q += len;
+
     // SKIPPED_TOKEN after UNDEFINED_TOKEN
-    while (*q == ' ')
-        q++;
-    len = read_skipped_token(q);
+	len = match(q, "[^\n]*", NONE);
     if (len) {
         maps_put(maps, q, len, SKIPPED_TOKEN);
         q += len;
@@ -299,8 +194,43 @@ static int handle_undefine_token_then_skip(char *p, int len)
     return q - p;
 }
 
+/* handle flags */
+
+/* skip */
+// skip newline
+// skip whitespace
+
+/* string */ 
+// PRINTED_TOKEN,
+// FORMAT_SPECIFIER,
+
+/* combination */ 
+// CHARACTER,
+// COMMENT, // UNDEF: unclosed comment
+// POINTER, // UNDEF: not found
+// ADDRESS, // UNDEF: not found
+// LIBRARY_NAME, // UNDEF
+
+/* number */ 
+// NUMBER, // UNDEF
+
+/* other */ 
+// BRACKET,
+// OPERATOR,
+// COMPARATOR,
+// PUNCTUATION,
+
+/* alphabet */ 
+// RESERVED_WORD, // UNDEF
+// IDENTIFIER, // UNDEF: not found
+
+/* ?! */ 
+// UNDEFINED_TOKEN,
+// SKIPPED_TOKEN,
+
 token_t* scanning(char *path)
 {
+	/* initialization */
     char *input = extract_file(path);
     char *p = input;
     int len;
@@ -315,74 +245,36 @@ token_t* scanning(char *path)
     maps = calloc(NUM_TYPES, sizeof(HashMap));
     declared_set = calloc(1, sizeof(HashMap));
 
-    /* handle flags */
 
-    /* skip */
-    // skip newline
-    // skip whitespace
-
-    /* string */ 
-    // PRINTED_TOKEN,
-    // FORMAT_SPECIFIER,
-
-    /* combination */ 
-    // CHARACTER,
-    // COMMENT, // UNDEF: unclosed comment
-    // POINTER, // UNDEF: not found
-    // ADDRESS, // UNDEF: not found
-    // LIBRARY_NAME, // UNDEF
-
-    /* number */ 
-    // NUMBER, // UNDEF
-
-    /* other */ 
-    // BRACKET,
-    // OPERATOR,
-    // COMPARATOR,
-    // PUNCTUATION,
-
-    /* alphabet */ 
-    // RESERVED_WORD, // UNDEF
-    // IDENTIFIER, // UNDEF: not found
-
-    /* ?! */ 
-    // UNDEFINED_TOKEN,
-    // SKIPPED_TOKEN,
+	/* start reading file from *p */
     while (*p) {
-
         /* handle flags */
-        if (startswith(p, "int") ||
-                startswith(p, "float") ||
-                startswith(p, "char")) {
-            flag_on(flags, FLAG_DECLARE);
+		if (match(p, "(int|float|char)", ICASE)) {
+			flag_on(flags, FLAG_DECLARE);
+		}
+
+        if (match(p, "#[[:space:]]*include", ICASE)) {
+            flag_on(flags, FLAG_INCLUDE);
         }
 
-        if (match(p, "#[ ]*include", NONE)) {
-            flag_on(flags, FLAG_INCLUDE);
+		// TODO this code will cause any token to be FORMAT_SPECIFIER after any '"' when flag FLAG_PRINTED is on
+        if (*p == '"') {
+            flag_switch(flags, FLAG_PRINTED);
         }
 
         if ((*p == ';') || (*p == '\n')) {
             flag_reset(flags);
         }
 
-        if (*p == '"') {
-            flag_switch(flags, FLAG_PRINTED);
-        }
+        /* skip space */
+		len = match(p, "[[:space:]]", NONE);
+		if (len) {
+			p++;
+			continue;
+		}
 
-        /* skip */
-        // Skip newline.
-        if (*p == '\n') {
-            p++;
-            continue;
-        }
-
-        // Skip whitespace characters.
-        if (*p == ' ') {
-            p++;
-            continue;
-        }
-
-        /* string */ 
+		// TODO not handle yet
+        /* string */
         // PRINTED_TOKEN,
         // FORMAT_SPECIFIER,
         if (*p == '"') {
@@ -420,23 +312,24 @@ token_t* scanning(char *path)
         }
 
         /* combination */ 
-        // CHARACTER,
-        len = match(p, "'.'", NONE);
+        // CHARACTER
+        len = match(p, "'[[:print:]]'", NONE);
         if (len) {
             maps_put(maps, p, len, CHARACTER);
             p += len;
             continue;
         }
 
-        // COMMENT,
-        len = match(p, "(//[^\n]*)|(/[*]([^*]|[*][^/])*[*]/)", NONE);
+        // COMMENT
+        len = match(p, "(//[^\n]*|/[*]([^*]|[*][^/])*[*]/)", NONE);
         if (len) {
             maps_put(maps, p, len, COMMENT);
             p += len;
             continue;
         }
 
-        // POINTER,
+		// TODO not handle yet
+        // POINTER
         if (*p == '*' && isalpha(p[1])) {
             len = read_pointer(p);
             if (len) {
@@ -457,6 +350,7 @@ token_t* scanning(char *path)
             }
         }
 
+		// TODO not handle yet
         // ADDRESS,
         if (*p == '&' && isalpha(p[1])) {
             len = read_address(p);
@@ -483,6 +377,7 @@ token_t* scanning(char *path)
             }
         }
 
+		// TODO not handle yet
         /* number */ 
         // NUMBER,
         len = read_number(p);
@@ -494,7 +389,7 @@ token_t* scanning(char *path)
 
         /* other */ 
         // BRACKET
-        len = match(p, "[]\\(\\)\\[{}]", NONE);
+        len = match(p, "[]()[{}]", NONE);
         if (len) {
             maps_put(maps, p, len, BRACKET);
             p++;
@@ -502,7 +397,7 @@ token_t* scanning(char *path)
         }
 
         // COMPARATOR,
-        len = match(p, "([<>])|(>=)|(<=)|(==)|(!=)", NONE);
+        len = match(p, "(<|>|>=|<=|==|!=)", NONE);
         if (len) {
             maps_put(maps, p, len, COMPARATOR);
             p += len;
@@ -510,8 +405,7 @@ token_t* scanning(char *path)
         }
 
         // OPERATOR,
-        // len = read_operator(p);
-        len = match(p, "([+][+])|(--)|([*])|([/])|([%])|([&])|([|])|([=])", REG_EXTENDED);
+		len = match(p, "([+][+]|--|[+]|-|[*]|[/]|\\^|%|&|[|]|=)", NONE);
         if (len) {
             maps_put(maps, p, len, OPERATOR);
             p += len;
@@ -528,21 +422,23 @@ token_t* scanning(char *path)
 
         /* alphabet */ 
         // RESERVED_WORD,
+		len = match(p, "(include|main|char|int|float|if|else|elseif|for|while|do|return|switch|case|printf|scanf)", ICASE);
+		if (len) {
+			maps_put(maps, p, len, RESERVED_WORD);
+			p += len;
+			continue;
+		}
+
         // IDENTIFIER,
         len = match(p, "[[:alpha:]][[:alnum:]_]*", NONE);
         if (len) {
-            if (is_reserved_word(p, len)) {
-                maps_put(maps, p, len, RESERVED_WORD);
-                p += len;
-            } else if (flag_isset(flags, FLAG_DECLARE)) { // int abc;
+            if (flag_isset(flags, FLAG_DECLARE)) { // int abc;
                 declare(p, len);
                 maps_put(maps, p, len, IDENTIFIER);
                 p += len;
-
             } else if (is_declared(p, len)) { // abc = 10;
                 maps_put(maps, p, len, IDENTIFIER);
                 p += len;
-
             } else {
                 len = handle_undefine_token_then_skip(p, len);
                 p += len;
@@ -552,11 +448,11 @@ token_t* scanning(char *path)
 
         /* ?! */ 
         // UNDEFINED_TOKEN,
-        len = read_undefine_token(p);
+        len = match(p, "[[:alnum:]_\\.]*", NONE);
         if (len) {
             len = handle_undefine_token_then_skip(p, len);
             p += len;
-        } else { // shoud not reach here
+        } else { // should not reach here
             fprintf(stderr, "scanning error");
             exit(EXIT_FAILURE);
         }
@@ -586,4 +482,7 @@ void scanner_test(void)
 
     len = match("asdf", "aSDf", ICASE);
     assert(len == 4);
+
+	len = match("iNT", "(int|char|float)", ICASE);
+	assert(len == 3);
 }
