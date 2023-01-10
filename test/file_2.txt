@@ -1,0 +1,36 @@
+#include<stdlib.h>
+#include<stdio.h>
+main
+{
+int ia, ib, *ic, id;
+float fa, fb_c;
+char ca, cb;
+cb='Y';
+for(ia=0;ia<=10;ia++) {
+while(ib>2) {
+fb_c=((*ic)^ib)/fa;
+ib=ib-2;
+}
+do { *ic=ib*(-5); fa=fa/0.7;   // do-while loop
+} while(fa<2);
+for(id=10;id<0;id--)
+ib=(int)ib+3.6*fa/id;
+}
+if ((id<=2)|(ib>=3))  fa=ia-*ic/3.6;
+elseif ((id==0)&(ib<3)&(ib!=0))  ia=fa*fb_c%3;
+elseif ((id>10)&(ib==0))  fa=ia^(-5);
+else  ia=(int)0.7*fb_c/fa;
+switch(cb) {   /*switch case*/
+case('A')  fb_c=(*ic)*fb_c/fa;
+case('E')  ib=ia+ib-(*ic);
+case('H')  ib=(ia^2)%3;
+}
+scanf("Integer: %d", &ia);   /* scanf //
+                                                scanf */
+scanf("%c", &ca) ;
+printf("Random numbers: %c and %d %f Done!\n", cb, ib, fa);
+printf("%f is a float\t\\%c is a char\t%d\n", fb_c, ca, id);
+return
+}
+
+

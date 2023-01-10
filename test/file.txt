@@ -1,0 +1,7 @@
+int ia, ib, *ic, id ;
+float fa, fb_c ;
+char ca, cb ;
+scanf ("Integer: %d", &ia) ;   /* scanf //
+                                                scanf */
+scanf ("%c", &ca) ;
+printf ("Random numbers: %c and %d %f Done!\n", cb, ib, fa) ;

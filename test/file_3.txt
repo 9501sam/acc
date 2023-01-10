@@ -1,0 +1,13 @@
+#<stdio.h>
+float iffor, af_fa ;
+int ai, bi, *ci, id ;
+iffor = (float) ai + ib - ci ;
+while (bi != (-5))  ifelse = ai * 2 ;
+scanf ("%f", &fa) ;
+iF (ai > 5)  id = 5 ;
+ELsEIf (ai < (-2))  id = 10 ;
+elSe id = 10 ;
+af_fa = 3.6 * ci ;
+*iffor = *ci / 2 ;
+ai = bi & id ;
+bi = ai % id ;
